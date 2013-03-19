@@ -88,6 +88,7 @@ Event Handler Classes
 import os.path
 import logging
 import re
+import sys
 
 from pathtools.path import absolute_path
 from pathtools.patterns import match_any_paths
@@ -327,6 +328,11 @@ class FileSystemEventHandler(object):
   """Base file system event handler that you can override methods from.
   """
 
+  def _path_compat(self, path):
+    if sys.version_info >= (3,) and isinstance(path, bytes):
+        path = path.decode(sys.getfilesystemencoding())
+    return path
+
   def dispatch(self, event):
     """Dispatches events to the appropriate methods.
 
@@ -452,9 +458,9 @@ class PatternMatchingEventHandler(FileSystemEventHandler):
 
     paths = []
     if has_attribute(event, 'dest_path'):
-      paths.append(event.dest_path)
+      paths.append(self._path_compat(event.dest_path))
     if event.src_path:
-      paths.append(event.src_path)
+      paths.append(self._path_compat(event.src_path))
 
     if match_any_paths(paths,
                        included_patterns=self.patterns,
@@ -535,9 +541,9 @@ class RegexMatchingEventHandler(FileSystemEventHandler):
 
     paths = []
     if has_attribute(event, 'dest_path'):
-      paths.append(event.dest_path)
+      paths.append(self._path_compat(event.dest_path))
     if event.src_path:
-      paths.append(event.src_path)
+      paths.append(self._path_compat(event.src_path))
 
     if any(r.match(p) for r in self.ignore_regexes for p in paths):
       return
