@@ -67,7 +67,7 @@ Some extremely useful articles and documentation:
 
 """
 
-from __future__ import with_statement
+
 from watchdog.utils import platform
 from functools import reduce
 import sys
@@ -640,8 +640,10 @@ if platform.is_linux():
       :param mask:
           Event bit mask.
       """
+      if hasattr(path, 'encode'):
+        path = path.encode(sys.getfilesystemencoding())
       wd = inotify_add_watch(self._inotify_fd,
-                             path.encode(sys.getfilesystemencoding()),
+                             path,
                              mask)
       if wd == -1:
         Inotify._raise_error()
