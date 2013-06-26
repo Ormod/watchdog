@@ -90,5 +90,4 @@ if platform.is_windows():
         except queue.Empty:
           break
 
-      print got
       self.assertEqual(expected, got)
