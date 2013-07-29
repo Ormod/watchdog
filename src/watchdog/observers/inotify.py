@@ -69,6 +69,8 @@ Some extremely useful articles and documentation:
 
 from __future__ import with_statement
 from watchdog.utils import platform
+from functools import reduce
+import sys
 
 if platform.is_linux():
   import os
@@ -545,6 +547,8 @@ if platform.is_linux():
           if wd == -1:
             continue
           wd_path = self._path_for_wd[wd]
+          if sys.version_info >= (3,) and isinstance(wd_path, str):
+            wd_path = wd_path.encode(sys.getfilesystemencoding())
           src_path = absolute_path(os.path.join(wd_path, name))
           inotify_event = InotifyEvent(wd, mask, cookie, name, src_path)
 
@@ -637,7 +641,7 @@ if platform.is_linux():
           Event bit mask.
       """
       wd = inotify_add_watch(self._inotify_fd,
-                             path,
+                             path.encode(sys.getfilesystemencoding()),
                              mask)
       if wd == -1:
         Inotify._raise_error()
@@ -691,7 +695,7 @@ if platform.is_linux():
       while i + 16 < len(event_buffer):
         wd, mask, cookie, length =\
         struct.unpack_from('iIII', event_buffer, i)
-        name = event_buffer[i + 16:i + 16 + length].rstrip('\0')
+        name = event_buffer[i + 16:i + 16 + length].rstrip(b'\0')
         i += 16 + length
         yield wd, mask, cookie, name
 
