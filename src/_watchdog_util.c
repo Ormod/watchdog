@@ -72,7 +72,8 @@ Watchdog_CFRunLoopForEmitter_GetItem(PyObject *emitter_thread)
 {
     PyObject *py_runloop = PyDict_GetItem(g__runloop_for_emitter,
                                           emitter_thread);
-    CFRunLoopRef runloop = PyCObject_AsVoidPtr(py_runloop);
+    CFRunLoopRef runloop = PyCapsule_GetPointer(py_runloop, NULL);  // yPyCObject_AsVoidPtr(py_runloop);
+
     return runloop;
 }
 
@@ -93,7 +94,7 @@ int
 Watchdog_CFRunLoopForEmitter_SetItem(PyObject *emitter_thread,
                                      CFRunLoopRef runloop)
 {
-    PyObject *emitter_runloop = PyCObject_FromVoidPtr(runloop, PyMem_Free);
+  PyObject *emitter_runloop = PyCapsule_New(runloop, NULL, NULL); // PyCObject_FromVoidPtr(runloop, PyMem_Free);
     // refcount(emitter_runloop) = 1
     // refcount(emitter_thread) = 1
 
@@ -195,7 +196,7 @@ Watchdog_CFRunLoopForEmitter_GetItemOrDefault(PyObject *emitter_thread)
         }
     else
         {
-            runloop = PyCObject_AsVoidPtr(py_runloop);
+	  runloop = PyCapsule_GetPointer(py_runloop, NULL); //PyCObject_AsVoidPtr(py_runloop);
         }
 
     return runloop;
@@ -220,7 +221,7 @@ int
 Watchdog_StreamForWatch_SetItem(PyObject *watch, FSEventStreamRef stream)
 {
     int retval = 0;
-    PyObject *py_stream = PyCObject_FromVoidPtr(stream, PyMem_Free);
+    PyObject *py_stream = PyCapsule_New(stream, NULL, NULL); // PyCObject_FromVoidPtr(stream, PyMem_Free);
 
     retval = PyDict_SetItem(g__stream_for_watch, watch, py_stream);
     if (0 > retval)
@@ -248,7 +249,7 @@ FSEventStreamRef
 Watchdog_StreamForWatch_GetItem(PyObject *watch)
 {
     PyObject *py_stream = PyDict_GetItem(g__stream_for_watch, watch);
-    FSEventStreamRef stream = PyCObject_AsVoidPtr(py_stream);
+    FSEventStreamRef stream = PyCapsule_GetPointer(py_stream, NULL); // PyCObject_AsVoidPtr(py_stream);
     return stream;
 }
 
@@ -471,8 +472,9 @@ Watchdog_FSEventStream_Callback(ConstFSEventStreamRef stream,
     /* Enumerate event paths and flags into Python lists. */
     for (i = 0; i < num_events; ++i)
         {
-            event_path = PyString_FromString(event_paths[i]);
-            event_flag = PyInt_FromLong(event_flags[i]);
+	  //            event_path = PyString_FromString(event_paths[i]);
+	    event_path = PyBytes_FromString(event_paths[i]);
+            event_flag = PyLong_FromLong(event_flags[i]); //PyInt_FromLong(event_flags[i]);
             if (!(event_flag && event_path))
                 {
                     Py_DECREF(event_path_list);

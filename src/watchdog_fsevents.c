@@ -149,8 +149,9 @@ watchdog_FSEventStreamCallback(ConstFSEventStreamRef          stream_ref,
     }
     for (i = 0; i < num_events; ++i)
     {
-        path = PyString_FromString(event_paths[i]);
-        flags = PyInt_FromLong(event_flags[i]);
+      //        path = PyString_FromString(event_paths[i]);
+        path = PyBytes_FromString(event_paths[i]);
+        flags = PyLong_FromLong(event_flags[i]); // PyInt_FromLong(event_flags[i]);
         if (G_NOT(path && flags))
         {
             Py_DECREF(py_event_paths);
@@ -332,7 +333,7 @@ watchdog_add_watch(PyObject *self, PyObject *args)
     stream_ref = watchdog_FSEventStreamCreate(stream_callback_info_ref,
                                               paths_to_watch,
                                               (FSEventStreamCallback) &watchdog_FSEventStreamCallback);
-    value = PyCObject_FromVoidPtr(stream_ref, PyMem_Free);
+    value = PyCapsule_New(stream_ref, NULL, NULL); //PyCObject_FromVoidPtr(stream_ref, PyMem_Free);
     PyDict_SetItem(watch_to_stream, watch, value);
 
     /* Get a reference to the runloop for the emitter thread
@@ -344,7 +345,7 @@ watchdog_add_watch(PyObject *self, PyObject *args)
     }
     else
     {
-        run_loop_ref = PyCObject_AsVoidPtr(value);
+      run_loop_ref = PyCapsule_GetPointer(value, NULL); // PyCObject_AsVoidPtr(value);
     }
 
     /* Schedule the stream with the obtained runloop. */
@@ -394,7 +395,7 @@ watchdog_read_events(PyObject *self, PyObject *args)
     if (G_IS_NULL(value))
     {
         run_loop_ref = CFRunLoopGetCurrent();
-        value = PyCObject_FromVoidPtr(run_loop_ref, PyMem_Free);
+        value = PyCapsule_New(run_loop_ref, NULL, NULL); // PyCObject_FromVoidPtr(run_loop_ref, PyMem_Free);
         PyDict_SetItem(thread_to_run_loop, emitter_thread, value);
         Py_INCREF(emitter_thread);
         Py_INCREF(value);
@@ -429,7 +430,7 @@ watchdog_remove_watch(PyObject *self, PyObject *watch)
     PyObject *value = PyDict_GetItem(watch_to_stream, watch);
     PyDict_DelItem(watch_to_stream, watch);
 
-    FSEventStreamRef stream_ref = PyCObject_AsVoidPtr(value);
+    FSEventStreamRef stream_ref = PyCapsule_GetPointer(value, NULL); // PyCObject_AsVoidPtr(value);
 
     FSEventStreamStop(stream_ref);
     FSEventStreamInvalidate(stream_ref);
@@ -448,7 +449,7 @@ static PyObject *
 watchdog_stop(PyObject *self, PyObject *emitter_thread)
 {
     PyObject *value = PyDict_GetItem(thread_to_run_loop, emitter_thread);
-    CFRunLoopRef run_loop_ref = PyCObject_AsVoidPtr(value);
+    CFRunLoopRef run_loop_ref = PyCapsule_GetPointer(value, NULL); //PyCObject_AsVoidPtr(value);
 
     /* Stop the run loop. */
     if (G_IS_NOT_NULL(run_loop_ref))
