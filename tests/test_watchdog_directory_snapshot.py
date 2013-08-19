@@ -18,6 +18,7 @@
 
 
 import os
+import sys
 import unittest2
 
 #try:
@@ -65,7 +66,7 @@ class TestPollingEmitterSimple(unittest2.TestCase):
 
 
   def verify_equivalent_sequences(self, seq1, seq2):
-    self.assertEqual(len(seq1), len(seq2))
+    self.assertEqual(len(seq1), len(seq2), "seq1: %r, seq2: %r" % (seq1, seq2))
     for item in seq1:
       self.assertTrue(item in seq2)
 
@@ -93,17 +94,20 @@ class TestPollingEmitterSimple(unittest2.TestCase):
 
     snapAfter = DirectorySnapshot(temp_dir)
     changes = snapAfter - snapBefore
-
-    expected = {
-      'files_moved': [ (p('dir1', 'a'), p('dir2', 'x')), ],
-      'dirs_modified': [ p('dir1'), p('dir2'), ]
-    }
-
+    
+    expected = {'files_moved': [(p('dir1', 'a'), p('dir2', 'x'))],
+                'dirs_modified': [p('dir1'), p('dir2')]}
+    if sys.platform.startswith("win"):
+      expected = {"files_created": [p('dir2', 'x')],
+                  "files_deleted": [p('dir1', 'a')],
+                  "dirs_modified": [p('dir1'), p('dir2')]}
+      
     self.verify(expected, changes)
 
   def test_replace_same_folder(self):
     mkdir(p('dir1'))
     touch(p('dir1', 'a'))
+
     touch(p('dir1', 'b'))
 
     snapBefore = DirectorySnapshot(temp_dir)
@@ -114,10 +118,11 @@ class TestPollingEmitterSimple(unittest2.TestCase):
     snapAfter = DirectorySnapshot(temp_dir)
     changes = snapAfter - snapBefore
 
-    expected = {
-      'files_moved': [ (p('dir1', 'a'), p('dir1', 'b')), ],
-      'dirs_modified': [ p('dir1'), ]
-    }
+    expected = {'files_moved': [ (p('dir1', 'a'), p('dir1', 'b')), ],
+                'dirs_modified': [ p('dir1'), ]}
+    if sys.platform.startswith("win"):
+      expected = {"files_deleted": [p('dir1', 'a')],
+                  'dirs_modified': [p('dir1')]}
 
     self.verify(expected, changes)
 
@@ -137,9 +142,10 @@ class TestPollingEmitterSimple(unittest2.TestCase):
     snapAfter = DirectorySnapshot(temp_dir)
     changes = snapAfter - snapBefore
 
-    expected = {
-      'files_moved': [ (p('dir1', 'a'), p('dir2', 'a')), ],
-      'dirs_modified': [ p('dir1'), p('dir2'), ]
-    }
+    expected = {'files_moved': [ (p('dir1', 'a'), p('dir2', 'a')), ],
+                'dirs_modified': [ p('dir1'), p('dir2'), ]}
+    if sys.platform.startswith("win"):
+      expected = {'files_deleted': [p('dir1', 'a')],
+                  'dirs_modified': [ p('dir1'), p('dir2')]}
 
     self.verify(expected, changes)
