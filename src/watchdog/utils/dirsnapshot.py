@@ -61,7 +61,6 @@ from pathtools.path import walk as path_walk, absolute_path
 if sys.version_info >= (2, 6, 0):
     from watchdog.utils.bricks import OrderedSet as set
 
-
 class DirectorySnapshotDiff(object):
 
     """
@@ -115,6 +114,11 @@ class DirectorySnapshotDiff(object):
                             self._dirs_moved.append((old_path, path))
                         else:
                             self._files_moved.append((old_path, path))
+                        if stat_info.st_ino != ref_stat_info.st_mtime:
+                            if stat.S_ISDIR(created_stat_info.st_mode):
+                                self._dirs_modified.append(path)
+                            else:
+                                self._files_modified.append(path)
                     else:
                         # we have a newly created item with existing name, but different inode
                         paths_deleted.add(path)
@@ -139,6 +143,11 @@ class DirectorySnapshotDiff(object):
                             self._dirs_moved.append((deleted_path, created_path))
                         else:
                             self._files_moved.append((deleted_path, created_path))
+                        if created_stat_info.st_mtime != deleted_stat_info.st_mtime:
+                            if stat.S_ISDIR(created_stat_info.st_mode):
+                                self._dirs_modified.append(created_path)
+                            else:
+                                self._files_modified.append(created_path)
 
         # Now that we have renames out of the way, enlist the deleted and
         # created files/directories.
